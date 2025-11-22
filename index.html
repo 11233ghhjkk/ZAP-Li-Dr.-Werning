@@ -8,15 +8,14 @@
     <!-- 1. 基础样式库 (Tailwind CSS) -->
     <script src="https://cdn.tailwindcss.com"></script>
     
-    <!-- 2. React 核心库 (UMD 版本，无需构建工具) -->
+    <!-- 2. React 核心库 -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     
-    <!-- 3. Babel (让浏览器能读懂 JSX 写法) -->
+    <!-- 3. Babel -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        /* 体验优化：隐藏滚动条但允许滚动，防止 iOS 点击闪烁 */
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         * { -webkit-tap-highlight-color: transparent; }
@@ -26,11 +25,10 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        // --- 全局变量映射 ---
         const { useState, useEffect, useRef } = React;
         const { createRoot } = ReactDOM;
 
-        // --- ICON 组件 (手动集成，确保无需 import 也能显示) ---
+        // --- ICONS ---
         const Icons = {
             CheckCircle2: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22c5.523 0 10-4.477 10-10S17.523 2 12 2 2 6.477 2 12s4.477 10 10 10z"/><path d="m9 12 2 2 4-4"/></svg>,
             Circle: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/></svg>,
@@ -64,7 +62,7 @@
             GraduationCap: (props) => <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
         };
 
-        // --- 数据部分 ---
+        // --- DATA ---
 
         const PHASES = {
             PRE_START: { id: 'pre_start', title: 'Phase 1: Vor dem Start', subtitle: 'Vorbereitung & Unterlagen', contactKey: 'pre_start' },
@@ -167,13 +165,11 @@
         // --- MAIN APP ---
 
         function App() {
-            // LocalStorage Loader
             const loadState = (key, defaultValue) => {
                 try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : defaultValue; } 
                 catch (e) { return defaultValue; }
             };
 
-            // State
             const [isAdminMode, setIsAdminMode] = useState(false);
             const [activeTab, setActiveTab] = useState('dashboard');
             
@@ -183,14 +179,12 @@
             const [employeeRole, setEmployeeRole] = useState(() => loadState('zhk_role_v2', "DH / ZMP"));
             const [notes, setNotes] = useState(() => loadState('zhk_notes_v2', [{ id: 1, text: 'Wo sind die Bestellformulare?', completed: false, remark: 'Frag Frau Mohamed (Zimmer 2)' }]));
 
-            // Auto-Save
             useEffect(() => { localStorage.setItem('zhk_docs_v2', JSON.stringify(documents)); }, [documents]);
             useEffect(() => { localStorage.setItem('zhk_modules_v2', JSON.stringify(modules)); }, [modules]);
             useEffect(() => { localStorage.setItem('zhk_name_v2', JSON.stringify(employeeName)); }, [employeeName]);
             useEffect(() => { localStorage.setItem('zhk_role_v2', JSON.stringify(employeeRole)); }, [employeeRole]);
             useEffect(() => { localStorage.setItem('zhk_notes_v2', JSON.stringify(notes)); }, [notes]);
 
-            // UI State
             const [newNoteText, setNewNoteText] = useState('');
             const [editingNoteId, setEditingNoteId] = useState(null);
             const [tempRemark, setTempRemark] = useState('');
@@ -207,7 +201,6 @@
                 onboarding: { total: visibleModules.length, done: visibleModules.filter(m => m.completed).length }
             };
 
-            // Handlers
             const resetApp = () => { if(window.confirm("Möchten Sie wirklich alle Daten zurücksetzen?")) { setDocuments(INITIAL_DOCUMENTS); setModules(EINARBEITUNG_MODULES); setNotes([]); setEmployeeName("Neuer Mitarbeiter"); }};
             const toggleDocCompletion = (id) => setDocuments(docs => docs.map(d => d.id === id ? { ...d, completed: !d.completed } : d));
             const toggleModuleCompletion = (id) => setModules(mods => mods.map(m => m.id === id ? { ...m, completed: !m.completed } : m));
@@ -248,7 +241,16 @@
             const startEditingRemark = (note) => { setEditingNoteId(note.id); setTempRemark(note.remark); };
             const saveRemark = (id) => { setNotes(notes.map(n => n.id === id ? { ...n, remark: tempRemark } : n)); setEditingNoteId(null); };
 
-            // --- ADMIN PANEL ---
+            const handleAdminLogin = () => {
+                const password = prompt("Bitte Admin-Passwort eingeben:");
+                if (password === "20459") {
+                    setIsAdminMode(true);
+                } else if (password !== null) {
+                    alert("Falsches Passwort!");
+                }
+            };
+
+            // --- RENDER: ADMIN ---
             if (isAdminMode) {
                 return (
                     <div className="min-h-screen bg-slate-50 pb-20 font-sans">
@@ -298,16 +300,18 @@
                 );
             }
 
-            // --- APP RENDER ---
+            // --- RENDER: MAIN ---
             return (
                 <div className="bg-white min-h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative font-sans text-gray-900">
                     <main className="h-screen overflow-y-auto scrollbar-hide bg-white">
                         
-                        {/* DASHBOARD */}
                         {activeTab === 'dashboard' && (
                             <div className="space-y-6 pb-20 animate-in fade-in duration-300">
                                 <header className="bg-teal-700 text-white pt-6 pb-2 rounded-b-3xl shadow-xl relative overflow-hidden transition-all">
-                                    <button onClick={() => setIsAdminMode(true)} className="absolute top-4 right-4 text-teal-500/30 hover:text-white transition"><Icons.Lock width={16} height={16} /></button>
+                                    <button onClick={handleAdminLogin} className="absolute top-4 right-4 text-white opacity-80 hover:opacity-100 transition flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg border border-white/20">
+                                        <Icons.Lock width={14} height={14} />
+                                        <span className="text-[10px] font-bold tracking-wider">ADMIN</span>
+                                    </button>
                                     <div className="px-6 relative z-10 mb-4">
                                         <div className="flex items-baseline gap-2">
                                             <h1 className="text-2xl font-bold">Moin, {employeeName}!</h1>
@@ -356,7 +360,6 @@
                             </div>
                         )}
 
-                        {/* DOCS TAB */}
                         {activeTab === 'docs' && (
                             <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6">Checklisten</h2>
@@ -399,7 +402,6 @@
                             </div>
                         )}
 
-                        {/* LEARNING TAB */}
                         {activeTab === 'learning' && (
                             <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6">Einarbeitung</h2>
@@ -429,7 +431,6 @@
                             </div>
                         )}
 
-                        {/* NOTES TAB */}
                         {activeTab === 'notes' && (
                             <div className="px-4 pt-6 pb-20 flex flex-col h-full font-sans">
                                 <h2 className="text-xl font-bold text-gray-800 mb-1">Notizen</h2>
@@ -459,7 +460,6 @@
                             </div>
                         )}
 
-                        {/* TEAM TAB */}
                         {activeTab === 'team' && (
                             <div className="px-4 pt-6 pb-20 font-sans animate-in fade-in">
                                 <h2 className="text-xl font-bold text-gray-800 mb-6">Das Team</h2>
@@ -473,7 +473,6 @@
 
                     </main>
 
-                    {/* NAVIGATION BAR */}
                     <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 pb-safe pt-1 flex justify-between items-center z-40 safe-area-pb">
                         <TabButton active={activeTab === 'dashboard'} icon="Menu" label="Zeitplan" onClick={() => setActiveTab('dashboard')} />
                         <TabButton active={activeTab === 'docs'} icon="FileText" label="Docs" onClick={() => setActiveTab('docs')} />
@@ -482,7 +481,6 @@
                         <TabButton active={activeTab === 'team'} icon="Users" label="Team" onClick={() => setActiveTab('team')} />
                     </nav>
 
-                    {/* MODAL: MODULE DETAILS */}
                     {selectedModule && (
                         <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 font-sans">
                             <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl h-[85vh] sm:h-auto overflow-y-auto flex flex-col">
@@ -513,7 +511,6 @@
             );
         }
 
-        // 启动 React 应用
         const root = createRoot(document.getElementById('root'));
         root.render(<App />);
     </script>
