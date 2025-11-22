@@ -1,962 +1,489 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  CheckCircle2, 
-  Circle, 
-  Users, 
-  FileText, 
-  GraduationCap, 
-  HeartHandshake, 
-  ChevronRight, 
-  Play, 
-  Phone, 
-  Mail, 
-  Menu,
-  X,
-  Info,
-  Stethoscope,
-  UserCog,
-  Settings,
-  Eye,
-  EyeOff,
-  Save,
-  Lock,
-  CalendarClock,
-  MapPin,
-  ArrowDown,
-  Send,
-  Plus,
-  Trash2,
-  MessageSquare,
-  Edit3,
-  StickyNote,
-  BadgeEuro,
-  ShoppingBag,
-  ShieldCheck,
-  Briefcase,
-  Image as ImageIcon,
-  CheckSquare,
-  Download,
-  RotateCcw
-} from 'lucide-react';
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ZHK Einarbeitung</title>
+    <!-- 1. 引入 Tailwind CSS (样式) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 2. 引入 React 和 Babel (让浏览器读懂代码) -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        /* 隐藏滚动条但允许滚动 */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        /* 防止 iOS 点击高亮 */
+        * { -webkit-tap-highlight-color: transparent; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div id="root"></div>
 
-// --- 1. KONFIGURATION & DATEN (STATIC DATA) ---
+    <!-- 3. 这里的 type="text/babel" 是关键，让浏览器实时编译 -->
+    <script type="text/babel" data-type="module">
+        import React, { useState, useEffect, useRef } from 'https://esm.sh/react@18.2.0';
+        import { createRoot } from 'https://esm.sh/react-dom@18.2.0/client';
+        // 引入图标库
+        import { 
+            CheckCircle2, Circle, Users, FileText, GraduationCap, HeartHandshake, 
+            ChevronRight, Play, Phone, Mail, Menu, X, Info, Stethoscope, UserCog, 
+            Settings, Eye, EyeOff, Save, Lock, CalendarClock, MapPin, ArrowDown, 
+            Send, Plus, Trash2, MessageSquare, Edit3, StickyNote, BadgeEuro, 
+            ShoppingBag, ShieldCheck, Briefcase, Image as ImageIcon, CheckSquare, 
+            Download, RotateCcw
+        } from 'https://esm.sh/lucide-react@0.263.1';
 
-const PHASES = {
-  PRE_START: {
-    id: 'pre_start',
-    title: 'Phase 1: Vor dem Start',
-    subtitle: 'Vorbereitung & Unterlagen',
-    contactKey: 'pre_start'
-  },
-  DAY_ONE: {
-    id: 'day_one',
-    title: 'Phase 2: Der 1. Tag',
-    subtitle: 'Ankommen & Übergaben',
-    contactKey: 'day_one'
-  },
-  ONBOARDING: {
-    id: 'onboarding',
-    title: 'Phase 3: Einarbeitung',
-    subtitle: 'Praxis-Abläufe & Skills',
-    contactKey: 'mentoring'
-  }
-};
+        // --- DATEN (数据部分) ---
 
-const CONTACTS = {
-  pre_start: {
-    names: ['Frau Ahrens'],
-    role: 'Verwaltung / Abrechnung',
-    phone: '+49 40 111111',
-    email: 'buero@zhk-hh.de', 
-    message: 'Hallo! Ich kümmere mich um deinen Vertrag und alle Unterlagen. Bitte sende mir Personalbogen & Co. vorab per Mail.',
-    color: 'bg-pink-500',
-    initials: 'KA'
-  },
-  day_one: {
-    names: ['Herr Li', 'Frau Wen'],
-    role: 'Praxisinhaber & QM-Leitung',
-    phone: '+49 40 222222',
-    email: 'buero@zhk-hh.de',
-    message: 'Willkommen! Wir nehmen dich am ersten Tag in Empfang, zeigen dir die Praxisräume und übergeben dir die Schlüssel.',
-    color: 'bg-indigo-500',
-    initials: 'L&W'
-  },
-  mentoring: {
-    names: ['Frau Mohamed', 'Frau Wen'],
-    role: 'Deine Mentorinnen',
-    phone: '+49 40 333333',
-    email: 'buero@zhk-hh.de',
-    message: 'Wir sind für deine fachliche Einarbeitung zuständig. Frag uns alles zu Airflow, BEMA und Abläufen!',
-    color: 'bg-teal-500',
-    initials: 'M&W'
-  }
-};
+        const PHASES = {
+            PRE_START: { id: 'pre_start', title: 'Phase 1: Vor dem Start', subtitle: 'Vorbereitung & Unterlagen', contactKey: 'pre_start' },
+            DAY_ONE: { id: 'day_one', title: 'Phase 2: Der 1. Tag', subtitle: 'Ankommen & Übergaben', contactKey: 'day_one' },
+            ONBOARDING: { id: 'onboarding', title: 'Phase 3: Einarbeitung', subtitle: 'Praxis-Abläufe & Skills', contactKey: 'mentoring' }
+        };
 
-const TEAM_MEMBERS = {
-  behandler: [
-    { name: 'Herr Li', role: 'Praxisinhaber', details: 'Zahnarzt', image: 'Li', tags: ['Chef'] },
-    { name: 'Dr. Werning', role: 'Angestellter Zahnarzt', details: 'Ex-Praxisinhaber', image: 'DrW', tags: ['Rente 12/26'] },
-    { name: 'Frau Wen', role: 'Angestellte Zahnärztin', details: 'QM & Unterweisung', image: 'We', tags: ['QM', 'Mentor'] },
-    { name: 'Frau Panilova', role: 'Angestellte Zahnärztin', details: 'Berufserlaubnis / PZR', image: 'Pa', tags: ['8h PZR'] },
-  ],
-  assistenz: [
-    { name: 'Frau Ahrens', role: 'ZFA / Rezeption', details: 'Verwaltung & Abrechnung', image: 'Ah', tags: ['Empfang', 'Abrechnung'] },
-    { name: 'Frau Mohamed', role: 'ZFA / Prophylaxe', details: 'Bestellung, BEMA, PZR', image: 'Mo', tags: ['Mentor', 'Material', 'BEMA'] },
-    { name: 'Frau Balko', role: 'ZFA', details: 'Abrechnung, Bestellung, BEMA', image: 'Ba', tags: ['Abrechnung', 'Material'] },
-  ],
-  azubi: [
-    { name: 'Frau Hanna', role: 'Azubi', details: '2. Ausbildungsjahr', image: 'Ha' },
-    { name: 'Frau Marhduer', role: 'Azubi', details: '2. Ausbildungsjahr', image: 'Ma' },
-    { name: 'Frau Steblau', role: 'Azubi', details: '1. Ausbildungsjahr', image: 'St' },
-  ]
-};
+        const CONTACTS = {
+            pre_start: { names: ['Frau Ahrens'], role: 'Verwaltung / Abrechnung', phone: '+49 40 111111', email: 'buero@zhk-hh.de', message: 'Hallo! Ich kümmere mich um deinen Vertrag und alle Unterlagen. Bitte sende mir Personalbogen & Co. vorab per Mail.', color: 'bg-pink-500', initials: 'KA' },
+            day_one: { names: ['Herr Li', 'Frau Wen'], role: 'Praxisinhaber & QM-Leitung', phone: '+49 40 222222', email: 'buero@zhk-hh.de', message: 'Willkommen! Wir nehmen dich am ersten Tag in Empfang, zeigen dir die Praxisräume und übergeben dir die Schlüssel.', color: 'bg-indigo-500', initials: 'L&W' },
+            mentoring: { names: ['Frau Mohamed', 'Frau Wen'], role: 'Deine Mentorinnen', phone: '+49 40 333333', email: 'buero@zhk-hh.de', message: 'Wir sind für deine fachliche Einarbeitung zuständig. Frag uns alles zu Airflow, BEMA und Abläufen!', color: 'bg-teal-500', initials: 'M&W' }
+        };
 
-const INITIAL_DOCUMENTS = [
-  { 
-    id: 1, 
-    phase: 'pre_start',
-    title: 'Arbeitsvertrag', 
-    subtitle: 'Unterschrieben zurücksenden', 
-    description: 'Bitte lesen Sie den Vertrag sorgfältig durch und senden Sie die unterschriebene Kopie an Frau Ahrens.', 
-    completed: false,
-    visible: true,
-    emailAction: true 
-  },
-  { 
-    id: 2, 
-    phase: 'pre_start',
-    title: 'Personalbogen', 
-    subtitle: 'Downloaden, Ausfüllen & Signieren', 
-    description: 'Bitte Formular herunterladen, vollständig ausfüllen, unterschreiben und digital oder persönlich einreichen.',
-    downloadUrl: 'https://drive.google.com/file/d/1KqrVrOYDf9DFqOKsjjzZ8bZ2SAp1n6-m/view?usp=drivesdk',
-    completed: false, 
-    visible: true,
-    emailAction: true
-  },
-  { 
-    id: 10, 
-    phase: 'pre_start',
-    title: 'Berufskleidung Größe', 
-    subtitle: 'Für Bestellung angeben', 
-    description: 'Damit deine Kleidung am 1. Tag bereitliegt: Bitte Größe für Kasack/Hose angeben.', 
-    completed: false, 
-    visible: true,
-    emailAction: true
-  },
-  { 
-    id: 3, 
-    phase: 'pre_start',
-    title: 'Steuer-ID & SV-Nummer', 
-    subtitle: 'Für Lohnabrechnung', 
-    description: 'Benötigt für die Anmeldung bei der Krankenkasse/Steuerberater.', 
-    completed: false, 
-    visible: true,
-    emailAction: true
-  },
-  { 
-    id: 4, 
-    phase: 'pre_start',
-    title: 'Führungszeugnis', 
-    subtitle: 'Beantragung Bürgeramt', 
-    description: 'Erweitertes Führungszeugnis. Kosten werden erstattet.', 
-    completed: false, 
-    visible: true,
-    emailAction: false
-  },
-  { 
-    id: 5, 
-    phase: 'pre_start',
-    title: 'Fachkunde / Röntgenschein', 
-    subtitle: 'Aktualisierungsnachweis', 
-    description: 'Kopie des aktuellen Fachkundenachweises (nicht älter als 5 Jahre).', 
-    completed: false, 
-    visible: true,
-    emailAction: true
-  },
-  { 
-    id: 6, 
-    phase: 'pre_start',
-    title: 'Impfausweis', 
-    subtitle: 'Masernschutz', 
-    description: 'Nachweis Masernschutz ist Pflicht (Gesetz).', 
-    completed: false, 
-    visible: true,
-    emailAction: true
-  },
-  { 
-    id: 11, 
-    phase: 'day_one',
-    title: 'Schlüsselübergabe', 
-    subtitle: 'Empfang & Protokoll', 
-    description: 'Du erhältst: Praxisschlüssel, Transponder für Zeiterfassung und Spind-Schlüssel.', 
-    completed: false, 
-    visible: true,
-    emailAction: false
-  },
-  { 
-    id: 12, 
-    phase: 'day_one',
-    title: 'Rundgang & Spind', 
-    subtitle: 'Einrichtung', 
-    description: 'Zuweisung deines Spinds, Einrichten des Arbeitsplatzes.', 
-    completed: false, 
-    visible: true,
-    emailAction: false
-  }
-];
+        const TEAM_MEMBERS = {
+            behandler: [
+                { name: 'Herr Li', role: 'Praxisinhaber', details: 'Zahnarzt', image: 'Li', tags: ['Chef'] },
+                { name: 'Dr. Werning', role: 'Angestellter Zahnarzt', details: 'Ex-Praxisinhaber', image: 'DrW', tags: ['Rente 12/26'] },
+                { name: 'Frau Wen', role: 'Angestellte Zahnärztin', details: 'QM & Unterweisung', image: 'We', tags: ['QM', 'Mentor'] },
+                { name: 'Frau Panilova', role: 'Angestellte Zahnärztin', details: 'Berufserlaubnis / PZR', image: 'Pa', tags: ['8h PZR'] },
+            ],
+            assistenz: [
+                { name: 'Frau Ahrens', role: 'ZFA / Rezeption', details: 'Verwaltung & Abrechnung', image: 'Ah', tags: ['Empfang', 'Abrechnung'] },
+                { name: 'Frau Mohamed', role: 'ZFA / Prophylaxe', details: 'Bestellung, BEMA, PZR', image: 'Mo', tags: ['Mentor', 'Material', 'BEMA'] },
+                { name: 'Frau Balko', role: 'ZFA', details: 'Abrechnung, Bestellung, BEMA', image: 'Ba', tags: ['Abrechnung', 'Material'] },
+            ],
+            azubi: [
+                { name: 'Frau Hanna', role: 'Azubi', details: '2. Ausbildungsjahr', image: 'Ha' },
+                { name: 'Frau Marhduer', role: 'Azubi', details: '2. Ausbildungsjahr', image: 'Ma' },
+                { name: 'Frau Steblau', role: 'Azubi', details: '1. Ausbildungsjahr', image: 'St' },
+            ]
+        };
 
-const EINARBEITUNG_MODULES = [
-  {
-    id: 101,
-    title: 'Behandlungszimmer Routine',
-    duration: '30 Min',
-    description: 'Der tägliche Ablauf: Starten am Morgen und Herunterfahren am Abend.',
-    mediaType: 'video',
-    mediaPlaceholder: 'Video: Zimmer Routine', 
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '101-1', text: 'Einheit hochfahren (Hauptschalter)', completed: false },
-      { id: '101-2', text: 'Wasserwege spülen (2 Min. pro Instrument)', completed: false },
-      { id: '101-3', text: 'Computer starten & Dampsoft öffnen', completed: false },
-      { id: '101-4', text: 'Abends: Absauganlage reinigen (Orotol)', completed: false },
-      { id: '101-5', text: 'Abends: Stuhl herunterfahren & Licht aus', completed: false }
-    ]
-  },
-  {
-    id: 102,
-    title: 'Materialien & Setup (Lageplan)',
-    duration: '45 Min',
-    description: 'Wo finde ich was? Übersicht über Schubladen und Lagerung.',
-    mediaType: 'image',
-    mediaPlaceholder: 'Foto: Schubladen Plan',
-    mediaUrl: 'https://placehold.co/600x400/e2e8f0/1e293b?text=Lageplan+Schubladen', 
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '102-1', text: 'Optragate (Regular & Small) finden', completed: false },
-      { id: '102-2', text: 'Färbemittel (Mira-2-Ton) finden', completed: false },
-      { id: '102-3', text: 'Polierpasten & Kelche finden', completed: false },
-      { id: '102-4', text: 'Fluoridierungslacke finden', completed: false },
-      { id: '102-5', text: 'Vorratsschrank im Steri kennen', completed: false }
-    ]
-  },
-  {
-    id: 103,
-    title: 'Gerätekunde: Airflow',
-    duration: '45 Min',
-    description: 'Korrekte Handhabung und Reinigung des Airflow-Geräts.',
-    mediaType: 'video',
-    mediaPlaceholder: 'Video: Airflow Handling',
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '103-1', text: 'Handstück korrekt anschließen', completed: false },
-      { id: '103-2', text: 'Pulverkammer befüllen (Max-Linie)', completed: false },
-      { id: '103-3', text: 'Anwendungswinkel im Mund (nicht ins Zahnfleisch)', completed: false },
-      { id: '103-4', text: 'Reinigung nach Benutzung (Verstopfung vermeiden)', completed: false }
-    ]
-  },
-  {
-    id: 104,
-    title: 'Preise & Abrechnung (GKV)',
-    duration: '60 Min',
-    description: 'Wie wir abrechnen: Unterschiede bei Kassenpatienten.',
-    mediaType: 'image',
-    mediaPlaceholder: 'Foto: Preisliste',
-    mediaUrl: 'https://placehold.co/600x400/fef3c7/92400e?text=Preisliste+GKV',
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '104-1', text: 'Standard PZR Preis (~120€) kennen', completed: false },
-      { id: '104-2', text: 'Bestandsschutz Preis (~80€) prüfen', completed: false },
-      { id: '104-3', text: 'MKV (Mehrkostenvereinbarung) erstellen', completed: false },
-      { id: '104-4', text: 'Patientenunterschrift einholen VOR Behandlung', completed: false }
-    ]
-  },
-  {
-    id: 106,
-    title: 'Software: Dampsoft & Doctolib',
-    duration: '90 Min',
-    description: 'Dokumentation und Terminvergabe.',
-    mediaType: 'video',
-    mediaPlaceholder: 'Screen-Rec: Software',
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '106-1', text: 'Leistungserfassung (01, PZR Pos)', completed: false },
-      { id: '106-2', text: 'Bema/GOZ Kodes finden', completed: false },
-      { id: '106-3', text: 'Doctolib: Terminbuchung durchführen', completed: false },
-      { id: '106-4', text: 'Recall-Termin setzen', completed: false }
-    ]
-  },
-  {
-    id: 109,
-    title: 'Bleaching',
-    duration: '45 Min',
-    description: 'Ablauf eines In-Office Bleachings.',
-    mediaType: 'video',
-    mediaPlaceholder: 'Video: Bleaching',
-    completed: false,
-    visible: true,
-    subTasks: [
-      { id: '109-1', text: 'Gingiva-Schutz (Liquid Dam) auftragen', completed: false },
-      { id: '109-2', text: 'Bleaching-Gel anmischen', completed: false },
-      { id: '109-3', text: 'Aufklärung: "Weiße Diät"', completed: false },
-      { id: '109-4', text: 'Paketpreise kennen', completed: false }
-    ]
-  }
-];
+        const INITIAL_DOCUMENTS = [
+            { id: 1, phase: 'pre_start', title: 'Arbeitsvertrag', subtitle: 'Unterschrieben zurücksenden', description: 'Bitte lesen Sie den Vertrag sorgfältig durch und senden Sie die unterschriebene Kopie an Frau Ahrens.', completed: false, visible: true, emailAction: true },
+            { id: 2, phase: 'pre_start', title: 'Personalbogen', subtitle: 'Downloaden, Ausfüllen & Signieren', description: 'Bitte Formular herunterladen, vollständig ausfüllen, unterschreiben und digital oder persönlich einreichen.', downloadUrl: 'https://drive.google.com/file/d/1KqrVrOYDf9DFqOKsjjzZ8bZ2SAp1n6-m/view?usp=drivesdk', completed: false, visible: true, emailAction: true },
+            { id: 10, phase: 'pre_start', title: 'Berufskleidung Größe', subtitle: 'Für Bestellung angeben', description: 'Damit deine Kleidung am 1. Tag bereitliegt: Bitte Größe für Kasack/Hose angeben.', completed: false, visible: true, emailAction: true },
+            { id: 3, phase: 'pre_start', title: 'Steuer-ID & SV-Nummer', subtitle: 'Für Lohnabrechnung', description: 'Benötigt für die Anmeldung bei der Krankenkasse/Steuerberater.', completed: false, visible: true, emailAction: true },
+            { id: 4, phase: 'pre_start', title: 'Führungszeugnis', subtitle: 'Beantragung Bürgeramt', description: 'Erweitertes Führungszeugnis. Kosten werden erstattet.', completed: false, visible: true, emailAction: false },
+            { id: 5, phase: 'pre_start', title: 'Fachkunde / Röntgenschein', subtitle: 'Aktualisierungsnachweis', description: 'Kopie des aktuellen Fachkundenachweises (nicht älter als 5 Jahre).', completed: false, visible: true, emailAction: true },
+            { id: 6, phase: 'pre_start', title: 'Impfausweis', subtitle: 'Masernschutz', description: 'Nachweis Masernschutz ist Pflicht (Gesetz).', completed: false, visible: true, emailAction: true },
+            { id: 11, phase: 'day_one', title: 'Schlüsselübergabe', subtitle: 'Empfang & Protokoll', description: 'Du erhältst: Praxisschlüssel, Transponder für Zeiterfassung und Spind-Schlüssel.', completed: false, visible: true, emailAction: false },
+            { id: 12, phase: 'day_one', title: 'Rundgang & Spind', subtitle: 'Einrichtung', description: 'Zuweisung deines Spinds, Einrichten des Arbeitsplatzes.', completed: false, visible: true, emailAction: false }
+        ];
 
-// --- 2. KOMPONENTEN (UI) ---
+        const EINARBEITUNG_MODULES = [
+            { id: 101, title: 'Behandlungszimmer Routine', duration: '30 Min', description: 'Der tägliche Ablauf: Starten am Morgen und Herunterfahren am Abend.', mediaType: 'video', mediaPlaceholder: 'Video: Zimmer Routine', completed: false, visible: true, subTasks: [ { id: '101-1', text: 'Einheit hochfahren (Hauptschalter)', completed: false }, { id: '101-2', text: 'Wasserwege spülen (2 Min. pro Instrument)', completed: false }, { id: '101-3', text: 'Computer starten & Dampsoft öffnen', completed: false }, { id: '101-4', text: 'Abends: Absauganlage reinigen (Orotol)', completed: false }, { id: '101-5', text: 'Abends: Stuhl herunterfahren & Licht aus', completed: false } ] },
+            { id: 102, title: 'Materialien & Setup (Lageplan)', duration: '45 Min', description: 'Wo finde ich was? Übersicht über Schubladen und Lagerung.', mediaType: 'image', mediaPlaceholder: 'Foto: Schubladen Plan', mediaUrl: 'https://placehold.co/600x400/e2e8f0/1e293b?text=Lageplan+Schubladen', completed: false, visible: true, subTasks: [ { id: '102-1', text: 'Optragate (Regular & Small) finden', completed: false }, { id: '102-2', text: 'Färbemittel (Mira-2-Ton) finden', completed: false }, { id: '102-3', text: 'Polierpasten & Kelche finden', completed: false }, { id: '102-4', text: 'Fluoridierungslacke finden', completed: false }, { id: '102-5', text: 'Vorratsschrank im Steri kennen', completed: false } ] },
+            { id: 103, title: 'Gerätekunde: Airflow', duration: '45 Min', description: 'Korrekte Handhabung und Reinigung des Airflow-Geräts.', mediaType: 'video', mediaPlaceholder: 'Video: Airflow Handling', completed: false, visible: true, subTasks: [ { id: '103-1', text: 'Handstück korrekt anschließen', completed: false }, { id: '103-2', text: 'Pulverkammer befüllen (Max-Linie)', completed: false }, { id: '103-3', text: 'Anwendungswinkel im Mund (nicht ins Zahnfleisch)', completed: false }, { id: '103-4', text: 'Reinigung nach Benutzung (Verstopfung vermeiden)', completed: false } ] },
+            { id: 104, title: 'Preise & Abrechnung (GKV)', duration: '60 Min', description: 'Wie wir abrechnen: Unterschiede bei Kassenpatienten.', mediaType: 'image', mediaPlaceholder: 'Foto: Preisliste', mediaUrl: 'https://placehold.co/600x400/fef3c7/92400e?text=Preisliste+GKV', completed: false, visible: true, subTasks: [ { id: '104-1', text: 'Standard PZR Preis (~120€) kennen', completed: false }, { id: '104-2', text: 'Bestandsschutz Preis (~80€) prüfen', completed: false }, { id: '104-3', text: 'MKV (Mehrkostenvereinbarung) erstellen', completed: false }, { id: '104-4', text: 'Patientenunterschrift einholen VOR Behandlung', completed: false } ] },
+            { id: 106, title: 'Software: Dampsoft & Doctolib', duration: '90 Min', description: 'Dokumentation und Terminvergabe.', mediaType: 'video', mediaPlaceholder: 'Screen-Rec: Software', completed: false, visible: true, subTasks: [ { id: '106-1', text: 'Leistungserfassung (01, PZR Pos)', completed: false }, { id: '106-2', text: 'Bema/GOZ Kodes finden', completed: false }, { id: '106-3', text: 'Doctolib: Terminbuchung durchführen', completed: false }, { id: '106-4', text: 'Recall-Termin setzen', completed: false } ] },
+            { id: 109, title: 'Bleaching', duration: '45 Min', description: 'Ablauf eines In-Office Bleachings.', mediaType: 'video', mediaPlaceholder: 'Video: Bleaching', completed: false, visible: true, subTasks: [ { id: '109-1', text: 'Gingiva-Schutz (Liquid Dam) auftragen', completed: false }, { id: '109-2', text: 'Bleaching-Gel anmischen', completed: false }, { id: '109-3', text: 'Aufklärung: "Weiße Diät"', completed: false }, { id: '109-4', text: 'Paketpreise kennen', completed: false } ] }
+        ];
 
-const ProgressBar = ({ current, total, colorClass = "bg-teal-500" }) => {
-  const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
-  return (
-    <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-      <div 
-        className={`${colorClass} h-1.5 rounded-full transition-all duration-500 ease-out`} 
-        style={{ width: `${percentage}%` }}
-      ></div>
-    </div>
-  );
-};
+        // --- COMPONENTS ---
 
-const TabButton = ({ active, icon: Icon, label, onClick }) => (
-  <button 
-    onClick={onClick}
-    className={`flex flex-col items-center justify-center w-full py-3 space-y-1 transition-colors ${
-      active ? 'text-teal-600 border-t-2 border-teal-600 bg-teal-50' : 'text-gray-400 hover:text-gray-600'
-    }`}
-  >
-    <Icon size={20} />
-    <span className="text-[10px] font-medium">{label}</span>
-  </button>
-);
+        const ProgressBar = ({ current, total, colorClass = "bg-teal-500" }) => {
+            const percentage = total > 0 ? Math.round((current / total) * 100) : 0;
+            return (
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                    <div className={`${colorClass} h-1.5 rounded-full transition-all duration-500 ease-out`} style={{ width: `${percentage}%` }}></div>
+                </div>
+            );
+        };
 
-const Avatar = ({ initials, color = 'bg-blue-500', size = 'md' }) => {
-  const sizeClasses = size === 'lg' ? 'w-16 h-16 text-xl' : 'w-10 h-10 text-sm';
-  return (
-    <div className={`${sizeClasses} ${color} rounded-full flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>
-      {initials}
-    </div>
-  );
-};
+        const Avatar = ({ initials, color = 'bg-blue-500', size = 'md' }) => {
+            const sizeClasses = size === 'lg' ? 'w-16 h-16 text-xl' : 'w-10 h-10 text-sm';
+            return (
+                <div className={`${sizeClasses} ${color} rounded-full flex items-center justify-center text-white font-bold shadow-sm shrink-0`}>{initials}</div>
+            );
+        };
 
-// --- 3. MAIN APP ---
+        const TabButton = ({ active, icon: Icon, label, onClick }) => (
+            <button onClick={onClick} className={`flex flex-col items-center justify-center w-full py-3 space-y-1 transition-colors ${active ? 'text-teal-600 border-t-2 border-teal-600 bg-teal-50' : 'text-gray-400 hover:text-gray-600'}`}>
+                <Icon size={20} />
+                <span className="text-[10px] font-medium">{label}</span>
+            </button>
+        );
 
-export default function ZHKOnboardingApp() {
-  const [isAdminMode, setIsAdminMode] = useState(false);
-  const [activeTab, setActiveTab] = useState('dashboard');
-  
-  // --- DATA STATE WITH PERSISTENCE (LOCALSTORAGE) ---
-  // Helper to load data or use default
-  const loadState = (key, defaultValue) => {
-    try {
-      const saved = localStorage.getItem(key);
-      return saved ? JSON.parse(saved) : defaultValue;
-    } catch (e) {
-      console.error("Error loading state", e);
-      return defaultValue;
-    }
-  };
-
-  // State definitions
-  const [documents, setDocuments] = useState(() => loadState('zhk_docs_v1', INITIAL_DOCUMENTS));
-  const [modules, setModules] = useState(() => loadState('zhk_modules_v1', EINARBEITUNG_MODULES));
-  const [employeeName, setEmployeeName] = useState(() => loadState('zhk_name_v1', "Maria"));
-  const [employeeRole, setEmployeeRole] = useState(() => loadState('zhk_role_v1', "DH / ZMP"));
-  const [notes, setNotes] = useState(() => loadState('zhk_notes_v1', [
-    { id: 1, text: 'Wo sind die Bestellformulare?', completed: false, remark: 'Frag Frau Mohamed (Zimmer 2)' }
-  ]));
-
-  // --- SAVE DATA ON CHANGE ---
-  useEffect(() => { localStorage.setItem('zhk_docs_v1', JSON.stringify(documents)); }, [documents]);
-  useEffect(() => { localStorage.setItem('zhk_modules_v1', JSON.stringify(modules)); }, [modules]);
-  useEffect(() => { localStorage.setItem('zhk_name_v1', JSON.stringify(employeeName)); }, [employeeName]);
-  useEffect(() => { localStorage.setItem('zhk_role_v1', JSON.stringify(employeeRole)); }, [employeeRole]);
-  useEffect(() => { localStorage.setItem('zhk_notes_v1', JSON.stringify(notes)); }, [notes]);
-
-  // --- UI STATE ---
-  const [newNoteText, setNewNoteText] = useState('');
-  const [editingNoteId, setEditingNoteId] = useState(null);
-  const [tempRemark, setTempRemark] = useState('');
-  const [selectedModule, setSelectedModule] = useState(null);
-  const [selectedDoc, setSelectedDoc] = useState(null);
-  const [activePhaseContext, setActivePhaseContext] = useState('pre_start');
-
-  // Filtered Views based on Admin visibility settings
-  const visibleDocuments = documents.filter(d => d.visible);
-  const visibleModules = modules.filter(m => m.visible);
-
-  // Statistics Calculation
-  const stats = {
-    pre_start: {
-      total: visibleDocuments.filter(d => d.phase === 'pre_start').length,
-      done: visibleDocuments.filter(d => d.phase === 'pre_start' && d.completed).length
-    },
-    day_one: {
-      total: visibleDocuments.filter(d => d.phase === 'day_one').length,
-      done: visibleDocuments.filter(d => d.phase === 'day_one' && d.completed).length
-    },
-    onboarding: {
-      total: visibleModules.length,
-      done: visibleModules.filter(m => m.completed).length
-    }
-  };
-
-  // --- ACTIONS ---
-
-  const resetApp = () => {
-    if(window.confirm("Möchten Sie wirklich alle Daten und Fortschritte zurücksetzen?")) {
-        setDocuments(INITIAL_DOCUMENTS);
-        setModules(EINARBEITUNG_MODULES);
-        setNotes([]);
-        setEmployeeName("Neuer Mitarbeiter");
-        alert("App wurde zurückgesetzt.");
-    }
-  };
-
-  const toggleDocCompletion = (id) => {
-    setDocuments(docs => docs.map(d => d.id === id ? { ...d, completed: !d.completed } : d));
-  };
-
-  const toggleModuleCompletion = (id) => {
-    setModules(mods => mods.map(m => m.id === id ? { ...m, completed: !m.completed } : m));
-  };
-
-  const toggleSubTask = (moduleId, subTaskId) => {
-    setModules(mods => mods.map(m => {
-      if (m.id !== moduleId) return m;
-      const updatedSubTasks = m.subTasks.map(t => 
-        t.id === subTaskId ? { ...t, completed: !t.completed } : t
-      );
-      const allDone = updatedSubTasks.every(t => t.completed);
-      return { ...m, subTasks: updatedSubTasks, completed: allDone };
-    }));
-    
-    // Update modal state if open
-    if (selectedModule && selectedModule.id === moduleId) {
-       setSelectedModule(prev => {
-          const updatedSubTasks = prev.subTasks.map(t => 
-            t.id === subTaskId ? { ...t, completed: !t.completed } : t
-          );
-          const allDone = updatedSubTasks.every(t => t.completed);
-          return { ...prev, subTasks: updatedSubTasks, completed: allDone };
-       });
-    }
-  };
-
-  const toggleDocVisibility = (id) => {
-    setDocuments(docs => docs.map(d => d.id === id ? { ...d, visible: !d.visible } : d));
-  };
-
-  const toggleModuleVisibility = (id) => {
-    setModules(mods => mods.map(m => m.id === id ? { ...m, visible: !m.visible } : m));
-  };
-
-  const handleSendEmailReport = () => {
-    const subject = `Einarbeitung Status: ${employeeName} (${employeeRole})`;
-    const body = `Hallo,\n\nhier ist der aktuelle Stand:\nPhase 1: ${Math.round((stats.pre_start.done / stats.pre_start.total || 0) * 100)}%\nPhase 2: ${Math.round((stats.day_one.done / stats.day_one.total || 0) * 100)}%\nPhase 3: ${Math.round((stats.onboarding.done / stats.onboarding.total || 0) * 100)}%\n\nViele Grüße,\n${employeeName}`;
-    window.location.href = `mailto:buero@zhk-hh.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
-  const handleSendDocEmail = (doc) => {
-    const subject = `Einreichung: ${doc.title} - ${employeeName}`;
-    const body = `Hallo Frau Ahrens,\n\nanbei sende ich Ihnen mein Dokument: ${doc.title}.\n\nViele Grüße,\n${employeeName}`;
-    window.location.href = `mailto:buero@zhk-hh.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-  };
-
-  // Notes Actions
-  const addNote = () => {
-    if (!newNoteText.trim()) return;
-    setNotes([...notes, { id: Date.now(), text: newNoteText, completed: false, remark: '' }]);
-    setNewNoteText('');
-  };
-  const toggleNote = (id) => { setNotes(notes.map(n => n.id === id ? { ...n, completed: !n.completed } : n)); };
-  const deleteNote = (id) => { setNotes(notes.filter(n => n.id !== id)); };
-  const startEditingRemark = (note) => { setEditingNoteId(note.id); setTempRemark(note.remark); };
-  const saveRemark = (id) => { setNotes(notes.map(n => n.id === id ? { ...n, remark: tempRemark } : n)); setEditingNoteId(null); };
-
-  // --- VIEW: ADMIN PANEL ---
-  
-  const renderAdminPanel = () => {
-    const RoleButton = ({ role, label }) => (
-      <button 
-        onClick={() => setEmployeeRole(role)}
-        className={`flex-1 py-3 rounded-lg border text-sm font-bold transition-all ${
-          employeeRole === role 
-          ? 'bg-teal-600 text-white border-teal-600 shadow-md' 
-          : 'bg-white text-gray-600 border-gray-200 hover:border-teal-300'
-        }`}
-      >
-        {label}
-      </button>
-    );
-
-    return (
-      <div className="min-h-screen bg-slate-50 pb-20 font-sans">
-        <header className="bg-slate-800 text-white p-6 shadow-lg sticky top-0 z-20">
-          <h1 className="text-xl font-bold flex items-center gap-2">
-             <Settings size={20} className="text-teal-400"/> 
-             Admin Setup
-          </h1>
-          <p className="text-slate-300 text-sm mt-1">Einstellungen werden automatisch gespeichert.</p>
-        </header>
-        
-        <div className="p-4 space-y-6">
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Name der Mitarbeiterin</label>
-              <input 
-                type="text" 
-                value={employeeName} 
-                onChange={(e) => setEmployeeName(e.target.value)} 
-                className="w-full p-3 border border-gray-300 rounded-lg outline-none focus:border-teal-500 transition-colors"
-                placeholder="z.B. Maria"
-              />
-          </div>
-
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
-              <label className="block text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
-                <Briefcase size={14} /> Rolle / Modul auswählen
-              </label>
-              <div className="flex gap-2">
-                 <RoleButton role="Zahnarzt" label="Zahnarzt" />
-                 <RoleButton role="DH / ZMP" label="DH / ZMP" />
-                 <RoleButton role="Azubi" label="Azubi" />
-              </div>
-              <p className="text-[10px] text-gray-400 mt-2 text-center">Aktives Profil: {employeeRole}</p>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-             <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
-                <label className="text-xs font-bold text-gray-500 uppercase">Sichtbare Dokumente</label>
-             </div>
-             <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto">
-                {documents.map(doc => (
-                  <div key={doc.id} onClick={() => toggleDocVisibility(doc.id)} className={`p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${!doc.visible && 'opacity-50'}`}>
-                    <span className="text-sm text-gray-700 truncate max-w-[200px]">{doc.title}</span>
-                    {doc.visible ? <Eye size={16} className="text-teal-600" /> : <EyeOff size={16} className="text-gray-400" />}
-                  </div>
-                ))}
-             </div>
-          </div>
-
-          <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-             <div className="bg-gray-50 px-4 py-2 border-b border-gray-100">
-                <label className="text-xs font-bold text-gray-500 uppercase">Sichtbare Einarbeitung-Module</label>
-             </div>
-             <div className="divide-y divide-gray-50 max-h-60 overflow-y-auto">
-                {modules.map(mod => (
-                  <div key={mod.id} onClick={() => toggleModuleVisibility(mod.id)} className={`p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${!mod.visible && 'opacity-50'}`}>
-                    <span className="text-sm text-gray-700 truncate max-w-[200px]">{mod.title}</span>
-                    {mod.visible ? <Eye size={16} className="text-purple-600" /> : <EyeOff size={16} className="text-gray-400" />}
-                  </div>
-                ))}
-             </div>
-          </div>
-
-          <button onClick={() => setIsAdminMode(false)} className="w-full bg-teal-600 text-white py-4 rounded-xl font-bold shadow-lg hover:bg-teal-700 transition-colors flex items-center justify-center gap-2">
-             <Save size={18} /> 
-             Speichern & App starten
-          </button>
-
-          <button onClick={resetApp} className="w-full text-red-400 text-xs py-4 flex items-center justify-center gap-1 hover:text-red-600">
-             <RotateCcw size={12} /> 
-             Alle Daten zurücksetzen (Reset)
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  // --- VIEW: DASHBOARD ---
-  const renderDashboard = () => {
-    const phaseKeys = Object.keys(PHASES);
-
-    return (
-      <div className="space-y-6 pb-20 animate-in fade-in duration-300 font-sans">
-        <header className="bg-teal-700 text-white pt-6 pb-2 rounded-b-3xl shadow-xl relative overflow-hidden transition-all">
-          <button onClick={() => setIsAdminMode(true)} className="absolute top-4 right-4 text-teal-500/30 hover:text-white transition"><Lock size={16} /></button>
-          
-          <div className="px-6 relative z-10 mb-4">
-            <div className="flex items-baseline gap-2">
-               <h1 className="text-2xl font-bold">Moin, {employeeName}!</h1>
-               <span className="text-xs font-bold bg-teal-600/50 px-2 py-0.5 rounded border border-teal-500/50 text-teal-100">{employeeRole}</span>
+        const ContactCard = ({ contact }) => (
+            <div className="bg-white/10 rounded-xl p-4 backdrop-blur-sm border border-white/10 animate-in fade-in transition-all duration-300">
+                <div className="flex items-center space-x-3 mb-3">
+                    <Avatar initials={contact.initials} color={contact.color} />
+                    <div>
+                        <p className="text-xs text-teal-100 uppercase tracking-wider opacity-80">Ansprechpartner</p>
+                        <p className="font-semibold text-white text-sm">{contact.names.join(' & ')}</p>
+                        <p className="text-xs text-white/70">{contact.role}</p>
+                    </div>
+                </div>
+                <div className="text-xs text-teal-50 italic mb-4 leading-relaxed bg-black/10 p-2 rounded">"{contact.message}"</div>
+                <div className="flex gap-2">
+                    <a href={`tel:${contact.phone}`} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-teal-50 transition"><Phone size={14} /> Anrufen</a>
+                    <a href={`mailto:${contact.email}`} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-teal-50 transition"><Mail size={14} /> Email</a>
+                </div>
             </div>
-            <p className="text-teal-200 text-sm">Dein Onboarding-Fahrplan.</p>
-          </div>
-          
-          {/* Swipeable Contact Cards */}
-          <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-6 pb-6 scrollbar-hide">
-            {phaseKeys.map(key => {
-                const phase = PHASES[key];
-                const contact = CONTACTS[phase.contactKey];
-                const isActive = activePhaseContext === key.toLowerCase();
+        );
 
-                return (
-                    <div key={key} 
-                         onClick={() => setActivePhaseContext(key.toLowerCase())}
-                         className={`snap-center shrink-0 w-[85%] sm:w-[80%] bg-white/10 rounded-xl p-4 backdrop-blur-sm border transition-all duration-300 cursor-pointer ${isActive ? 'border-white/60 bg-white/20 shadow-lg scale-[1.02]' : 'border-white/5 opacity-80 hover:opacity-100'}`}>
-                         
-                         <div className="flex items-center space-x-3 mb-3">
-                           <Avatar initials={contact.initials} color={contact.color} />
-                           <div>
-                             <p className="text-[10px] text-teal-100 uppercase tracking-wider opacity-90 font-bold">{phase.title}</p>
-                             <p className="font-semibold text-white text-sm">{contact.names.join(' & ')}</p>
-                           </div>
-                         </div>
-                         
-                         <div className="text-xs text-teal-50 italic mb-4 leading-relaxed bg-black/10 p-2 rounded min-h-[50px]">
-                           "{contact.message}"
-                         </div>
-                         
-                         <div className="flex gap-2">
-                            <a href={`tel:${contact.phone}`} onClick={(e) => e.stopPropagation()} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-teal-50 transition">
-                                <Phone size={14} /> 
-                            </a>
-                            <a href={`mailto:${contact.email}`} onClick={(e) => e.stopPropagation()} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2 hover:bg-teal-50 transition">
-                                <Mail size={14} /> 
-                            </a>
-                         </div>
-                    </div>
-                )
-            })}
-          </div>
-        </header>
+        // --- MAIN APP ---
 
-        <div className="px-6 pt-2">
-          <div className="mt-2 space-y-4">
-             {phaseKeys.map(key => {
-                 const phase = PHASES[key];
-                 const stat = stats[key.toLowerCase()];
-                 const isActive = activePhaseContext === key.toLowerCase();
-                 const isDone = stat.total > 0 && stat.total === stat.done;
+        function App() {
+            // LocalStorage Loader Helper
+            const loadState = (key, defaultValue) => {
+                try { const saved = localStorage.getItem(key); return saved ? JSON.parse(saved) : defaultValue; } 
+                catch (e) { return defaultValue; }
+            };
 
-                 return (
-                    <div key={key} onClick={() => { setActivePhaseContext(key.toLowerCase()); if(key === 'ONBOARDING') setActiveTab('learning'); else setActiveTab('docs'); }} 
-                        className={`relative pl-8 pb-0 border-l-2 cursor-pointer transition-all duration-500 ${isActive ? 'border-teal-500' : 'border-gray-200'}`}>
-                        
-                        <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 transition-all duration-500 ${isActive ? 'bg-teal-500 border-teal-500 scale-110' : isDone ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'}`}></div>
-                        
-                        <div className={`bg-white p-4 rounded-xl border shadow-sm transition-all duration-300 hover:shadow-md ${isActive ? 'border-teal-500 ring-1 ring-teal-100 translate-x-1' : 'border-gray-100'}`}>
-                            <div className="mb-1">
-                                <h3 className={`font-bold text-sm ${isActive ? 'text-teal-700' : 'text-gray-700'}`}>{phase.title}</h3>
-                                <p className="text-xs text-gray-500">{phase.subtitle}</p>
-                            </div>
-                            <ProgressBar current={stat.done} total={stat.total} colorClass={isActive ? 'bg-teal-500' : 'bg-gray-300'} />
-                            {isActive && <div className="mt-2 text-[10px] font-bold text-teal-600 flex items-center gap-1 animate-pulse">Jetzt aktiv <ChevronRight size={10}/></div>}
-                        </div>
-                    </div>
-                 );
-             })}
-          </div>
-        </div>
-        
-        <div className="px-6">
-             <button onClick={handleSendEmailReport} className="w-full bg-white border border-teal-200 text-teal-700 py-3 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2 hover:bg-teal-50 transition">
-                <Send size={18} /> Fortschritt an Büro senden
-             </button>
-        </div>
-      </div>
-    );
-  };
-
-  // --- VIEW: DOCS ---
-  const renderDocs = () => {
-    const preStartDocs = visibleDocuments.filter(d => d.phase === 'pre_start');
-    const dayOneDocs = visibleDocuments.filter(d => d.phase === 'day_one');
-    const DocItem = ({doc}) => (
-       <div className={`bg-white border rounded-xl overflow-hidden transition-all mb-3 ${doc.completed ? 'border-green-200 bg-green-50/30 opacity-80' : 'border-gray-200 shadow-sm'}`}>
-        <div className="p-4 flex items-start gap-3 cursor-pointer" onClick={() => setSelectedDoc(selectedDoc === doc.id ? null : doc.id)}>
-          <button onClick={(e) => { e.stopPropagation(); toggleDocCompletion(doc.id); }} className={`mt-1 shrink-0 transition-colors ${doc.completed ? 'text-green-500' : 'text-gray-300 hover:text-gray-400'}`}>
-            {doc.completed ? <CheckCircle2 size={24} /> : <Circle size={24} />}
-          </button>
-          <div className="flex-1">
-            <h3 className={`font-semibold text-sm ${doc.completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{doc.title}</h3>
-            <p className="text-xs text-gray-500">{doc.subtitle}</p>
-          </div>
-          {selectedDoc === doc.id ? <ArrowDown size={16} className="text-gray-400" /> : <ChevronRight size={16} className="text-gray-300" />}
-        </div>
-        {selectedDoc === doc.id && (
-          <div className="px-4 pb-4 pl-12 bg-gray-50/50 border-t border-gray-100 pt-3">
-            <p className="text-xs text-gray-600 mb-3">{doc.description}</p>
+            // State
+            const [isAdminMode, setIsAdminMode] = useState(false);
+            const [activeTab, setActiveTab] = useState('dashboard');
             
-            {doc.downloadUrl && (
-                <a href={doc.downloadUrl} target="_blank" rel="noreferrer" className="mb-3 flex items-center justify-center gap-2 w-full py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-xs font-bold hover:bg-blue-100 transition">
-                    <Download size={14} /> PDF Herunterladen
-                </a>
-            )}
+            const [documents, setDocuments] = useState(() => loadState('zhk_docs_v1', INITIAL_DOCUMENTS));
+            const [modules, setModules] = useState(() => loadState('zhk_modules_v1', EINARBEITUNG_MODULES));
+            const [employeeName, setEmployeeName] = useState(() => loadState('zhk_name_v1', "Maria"));
+            const [employeeRole, setEmployeeRole] = useState(() => loadState('zhk_role_v1', "DH / ZMP"));
+            const [notes, setNotes] = useState(() => loadState('zhk_notes_v1', [{ id: 1, text: 'Wo sind die Bestellformulare?', completed: false, remark: 'Frag Frau Mohamed (Zimmer 2)' }]));
 
-            {doc.id === 10 && !doc.completed && (
-                <div className="mb-3 flex gap-1">{['XS','S','M','L','XL'].map(s => <button key={s} className="flex-1 py-1 text-xs border rounded bg-white">{s}</button>)}</div>
-            )}
-            <div className="flex gap-2">
-                <button onClick={() => toggleDocCompletion(doc.id)} className="flex-1 py-2 text-xs font-bold bg-teal-600 text-white rounded-lg">
-                {doc.completed ? 'Rückgängig' : 'Erledigen'}
-                </button>
-                {doc.emailAction && (
-                    <button onClick={() => handleSendDocEmail(doc)} className="flex-1 py-2 text-xs font-bold bg-white text-teal-600 border border-teal-200 rounded-lg flex items-center justify-center gap-1">
-                        <Mail size={14} /> Senden
-                    </button>
-                )}
-            </div>
-          </div>
-        )}
-      </div>
-    );
-    return (
-      <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
-        <h2 className="text-xl font-bold text-gray-800 mb-6">Checklisten</h2>
-        <div className="mb-8">
-           <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 sticky top-0 bg-white py-2"><span className="w-6 h-6 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center text-xs">1</span> Vor dem Start (Frau Ahrens)</h3>
-           {preStartDocs.map(doc => <DocItem key={doc.id} doc={doc} />)}
-        </div>
-        <div>
-           <h3 className="text-sm font-bold text-gray-700 mb-3 flex items-center gap-2 sticky top-0 bg-white py-2"><span className="w-6 h-6 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center text-xs">2</span> Am 1. Tag (Herr Li & Frau Wen)</h3>
-           {dayOneDocs.map(doc => <DocItem key={doc.id} doc={doc} />)}
-        </div>
-      </div>
-    );
-  };
+            // Auto-Save Effects
+            useEffect(() => { localStorage.setItem('zhk_docs_v1', JSON.stringify(documents)); }, [documents]);
+            useEffect(() => { localStorage.setItem('zhk_modules_v1', JSON.stringify(modules)); }, [modules]);
+            useEffect(() => { localStorage.setItem('zhk_name_v1', JSON.stringify(employeeName)); }, [employeeName]);
+            useEffect(() => { localStorage.setItem('zhk_role_v1', JSON.stringify(employeeRole)); }, [employeeRole]);
+            useEffect(() => { localStorage.setItem('zhk_notes_v1', JSON.stringify(notes)); }, [notes]);
 
-  // --- VIEW: NOTES ---
-  const renderNotes = () => (
-    <div className="px-4 pt-6 pb-20 flex flex-col h-full font-sans">
-      <h2 className="text-xl font-bold text-gray-800 mb-1">Notizen & Fragen</h2>
-      <p className="text-gray-500 text-sm mb-6">Fragen an Frau Mohamed & Frau Wen</p>
-      <div className="flex gap-2 mb-6">
-        <input type="text" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addNote()} placeholder="Neue Frage..." className="flex-1 border rounded-xl px-4 py-2 text-sm outline-none focus:border-teal-500" />
-        <button onClick={addNote} className="bg-teal-600 text-white w-10 h-10 rounded-xl flex items-center justify-center"><Plus size={24} /></button>
-      </div>
-      <div className="space-y-3 flex-1 overflow-y-auto pb-20">
-        {notes.length === 0 && <p className="text-center text-gray-400 text-sm mt-10">Keine offenen Fragen.</p>}
-        {notes.map(note => (
-            <div key={note.id} className={`p-4 rounded-xl border transition-all ${note.completed ? 'bg-gray-50 border-gray-200' : 'bg-white border-teal-100 shadow-sm'}`}>
-                <div className="flex items-start gap-3">
-                    <button onClick={() => toggleNote(note.id)} className={`mt-0.5 ${note.completed ? 'text-gray-400' : 'text-teal-500'}`}>{note.completed ? <CheckCircle2 size={20} /> : <Circle size={20} />}</button>
-                    <div className="flex-1">
-                        <p className={`text-sm font-medium ${note.completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{note.text}</p>
-                        {editingNoteId === note.id ? (
-                            <div className="mt-2 flex gap-2"><input type="text" autoFocus value={tempRemark} onChange={(e) => setTempRemark(e.target.value)} className="flex-1 text-xs border rounded px-2 py-1 bg-blue-50" /><button onClick={() => saveRemark(note.id)} className="text-green-600"><CheckCircle2 size={16} /></button></div>
-                        ) : (
-                            (note.remark || note.completed) && <div onClick={() => startEditingRemark(note)} className="mt-2 flex items-center gap-1 text-xs text-gray-500 bg-gray-100 p-2 rounded cursor-pointer"><MessageSquare size={12} className="text-blue-400" /> {note.remark || "Notiz..."}</div>
-                        )}
-                    </div>
-                    <div className="flex flex-col gap-2"><button onClick={() => deleteNote(note.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16} /></button>{!note.completed && !editingNoteId && <button onClick={() => startEditingRemark(note)} className="text-gray-300 hover:text-blue-400"><Edit3 size={16} /></button>}</div>
-                </div>
-            </div>
-        ))}
-      </div>
-    </div>
-  );
+            // UI State
+            const [newNoteText, setNewNoteText] = useState('');
+            const [editingNoteId, setEditingNoteId] = useState(null);
+            const [tempRemark, setTempRemark] = useState('');
+            const [selectedModule, setSelectedModule] = useState(null);
+            const [selectedDoc, setSelectedDoc] = useState(null);
+            const [activePhaseContext, setActivePhaseContext] = useState('pre_start');
 
-  // --- VIEW: TEAM ---
-  const renderTeam = () => (
-    <div className="px-4 pt-6 pb-20 bg-gray-50 min-h-full animate-in slide-in-from-right-4 duration-300 font-sans">
-      <h2 className="text-xl font-bold text-gray-800 mb-4">Das Praxis-Team</h2>
-      <div className="space-y-6">
-        <section>
-          <h3 className="font-bold text-xs uppercase text-teal-700 mb-2 flex items-center gap-2"><Stethoscope size={16}/> Behandler</h3>
-          <div className="grid gap-2">
-            {TEAM_MEMBERS.behandler.map((member, idx) => (
-              <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 flex items-start gap-3">
-                <Avatar initials={member.image} color="bg-indigo-500" />
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 text-sm">{member.name}</p>
-                  <p className="text-[10px] text-gray-500 font-medium">{member.role}</p>
-                  <p className="text-[10px] text-gray-400">{member.details}</p>
-                  {member.tags && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                          {member.tags.map(tag => (
-                              <span key={tag} className="px-1.5 py-0.5 bg-indigo-50 text-indigo-600 text-[9px] rounded border border-indigo-100 font-medium">{tag}</span>
-                          ))}
-                      </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section>
-          <h3 className="font-bold text-xs uppercase text-teal-700 mb-2 flex items-center gap-2"><UserCog size={16}/> Assistenz & Verwaltung</h3>
-          <div className="grid gap-2">
-            {TEAM_MEMBERS.assistenz.map((member, idx) => (
-              <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 flex items-start gap-3">
-                <Avatar initials={member.image} color="bg-pink-500" />
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 text-sm">{member.name}</p>
-                  <p className="text-[10px] text-gray-500 font-medium">{member.role}</p>
-                  <p className="text-[10px] text-gray-400">{member.details}</p>
-                   {member.tags && (
-                      <div className="flex flex-wrap gap-1 mt-1.5">
-                          {member.tags.map(tag => (
-                              <span key={tag} className={`px-1.5 py-0.5 text-[9px] rounded border font-medium ${tag === 'Material' || tag === 'Bestellung' ? 'bg-amber-50 text-amber-700 border-amber-100' : 'bg-pink-50 text-pink-600 border-pink-100'}`}>{tag}</span>
-                          ))}
-                      </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-        <section>
-          <h3 className="font-bold text-xs uppercase text-teal-700 mb-2 flex items-center gap-2"><GraduationCap size={16}/> Auszubildende</h3>
-          <div className="grid grid-cols-3 gap-2">
-            {TEAM_MEMBERS.azubi.map((member, idx) => (
-              <div key={idx} className="bg-white p-3 rounded-xl border border-gray-100 flex flex-col items-center text-center">
-                <Avatar initials={member.image} color="bg-amber-500" />
-                <p className="font-semibold text-gray-800 text-xs mt-2">{member.name}</p>
-                <p className="text-[9px] text-gray-400 leading-tight mt-1">{member.details}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
+            const visibleDocuments = documents.filter(d => d.visible);
+            const visibleModules = modules.filter(m => m.visible);
 
-  // --- VIEW: LEARNING (EINARBEITUNG) ---
-  const renderLearning = () => (
-      <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
-          <h2 className="text-xl font-bold text-gray-800 mb-6">Einarbeitung (Woche 1 & 2)</h2>
-          <div className="space-y-4">
-            {visibleModules.map(module => {
-                const subTaskCount = module.subTasks ? module.subTasks.length : 0;
-                const subTaskCompleted = module.subTasks ? module.subTasks.filter(t => t.completed).length : 0;
-                
+            const stats = {
+                pre_start: { total: visibleDocuments.filter(d => d.phase === 'pre_start').length, done: visibleDocuments.filter(d => d.phase === 'pre_start' && d.completed).length },
+                day_one: { total: visibleDocuments.filter(d => d.phase === 'day_one').length, done: visibleDocuments.filter(d => d.phase === 'day_one' && d.completed).length },
+                onboarding: { total: visibleModules.length, done: visibleModules.filter(m => m.completed).length }
+            };
+
+            // Handlers
+            const resetApp = () => { if(window.confirm("Reset?")) { setDocuments(INITIAL_DOCUMENTS); setModules(EINARBEITUNG_MODULES); setNotes([]); setEmployeeName("Neuer Mitarbeiter"); }};
+            const toggleDocCompletion = (id) => setDocuments(docs => docs.map(d => d.id === id ? { ...d, completed: !d.completed } : d));
+            const toggleModuleCompletion = (id) => setModules(mods => mods.map(m => m.id === id ? { ...m, completed: !m.completed } : m));
+            const toggleDocVisibility = (id) => setDocuments(docs => docs.map(d => d.id === id ? { ...d, visible: !d.visible } : d));
+            const toggleModuleVisibility = (id) => setModules(mods => mods.map(m => m.id === id ? { ...m, visible: !m.visible } : m));
+            
+            const toggleSubTask = (moduleId, subTaskId) => {
+                setModules(mods => mods.map(m => {
+                    if (m.id !== moduleId) return m;
+                    const updatedSubTasks = m.subTasks.map(t => t.id === subTaskId ? { ...t, completed: !t.completed } : t);
+                    const allDone = updatedSubTasks.every(t => t.completed);
+                    return { ...m, subTasks: updatedSubTasks, completed: allDone };
+                }));
+                if (selectedModule && selectedModule.id === moduleId) {
+                    setSelectedModule(prev => {
+                        const updatedSubTasks = prev.subTasks.map(t => t.id === subTaskId ? { ...t, completed: !t.completed } : t);
+                        const allDone = updatedSubTasks.every(t => t.completed);
+                        return { ...prev, subTasks: updatedSubTasks, completed: allDone };
+                    });
+                }
+            };
+
+            const handleSendEmailReport = () => {
+                const subject = `Einarbeitung Status: ${employeeName} (${employeeRole})`;
+                const body = `Hallo,\n\nhier ist der aktuelle Stand:\nPhase 1: ${Math.round((stats.pre_start.done / stats.pre_start.total || 0) * 100)}%\nPhase 2: ${Math.round((stats.day_one.done / stats.day_one.total || 0) * 100)}%\nPhase 3: ${Math.round((stats.onboarding.done / stats.onboarding.total || 0) * 100)}%\n\nViele Grüße,\n${employeeName}`;
+                window.location.href = `mailto:buero@zhk-hh.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+
+            const handleSendDocEmail = (doc) => {
+                const subject = `Einreichung: ${doc.title} - ${employeeName}`;
+                const body = `Hallo Frau Ahrens,\n\nanbei sende ich Ihnen mein Dokument: ${doc.title}.\n\nViele Grüße,\n${employeeName}`;
+                window.location.href = `mailto:buero@zhk-hh.de?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+
+            // Note Handlers
+            const addNote = () => { if (!newNoteText.trim()) return; setNotes([...notes, { id: Date.now(), text: newNoteText, completed: false, remark: '' }]); setNewNoteText(''); };
+            const toggleNote = (id) => { setNotes(notes.map(n => n.id === id ? { ...n, completed: !n.completed } : n)); };
+            const deleteNote = (id) => { setNotes(notes.filter(n => n.id !== id)); };
+            const startEditingRemark = (note) => { setEditingNoteId(note.id); setTempRemark(note.remark); };
+            const saveRemark = (id) => { setNotes(notes.map(n => n.id === id ? { ...n, remark: tempRemark } : n)); setEditingNoteId(null); };
+
+            // --- VIEW RENDERERS ---
+
+            if (isAdminMode) {
                 return (
-                    <div key={module.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="relative h-28 bg-slate-800 flex items-center justify-center group cursor-pointer" onClick={() => setSelectedModule(module)}>
-                            <div className="absolute inset-0 bg-black/40 group-hover:bg-black/30 transition"></div>
-                            {/* Media Icon Indicator */}
-                            <div className="relative z-10 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-teal-600 shadow-lg">
-                                {module.mediaType === 'image' ? <ImageIcon size={18} /> : <Play size={18} fill="currentColor" />}
+                    <div className="min-h-screen bg-slate-50 pb-20 font-sans">
+                        <header className="bg-slate-800 text-white p-6 shadow-lg sticky top-0 z-20">
+                            <h1 className="text-xl font-bold flex items-center gap-2"><Settings size={20} className="text-teal-400"/> Admin Setup</h1>
+                            <p className="text-slate-300 text-sm mt-1">Einstellungen werden automatisch gespeichert.</p>
+                        </header>
+                        <div className="p-4 space-y-6">
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-2">Name</label>
+                                <input type="text" value={employeeName} onChange={(e) => setEmployeeName(e.target.value)} className="w-full p-3 border rounded-lg outline-none focus:border-teal-500" placeholder="z.B. Maria" />
                             </div>
-                            
-                            <span className="absolute bottom-2 right-3 bg-black/60 text-white text-[10px] px-2 py-0.5 rounded font-medium">{module.duration}</span>
-                            {module.completed && <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1 shadow-md"><CheckCircle2 size={12} /> Erledigt</div>}
-                        </div>
-                        <div className="p-4">
-                            <h3 className="font-bold text-gray-800 text-sm mb-1">{module.title}</h3>
-                            <p className="text-xs text-gray-500 line-clamp-2 mb-2">{module.description}</p>
-                            
-                            {/* Mini Progress Bar for Subtasks */}
-                            {subTaskCount > 0 && (
-                                <div className="flex items-center gap-2 text-[10px] text-gray-400">
-                                   <div className="flex-1 bg-gray-100 rounded-full h-1">
-                                      <div className="bg-teal-500 h-1 rounded-full transition-all" style={{ width: `${(subTaskCompleted/subTaskCount)*100}%` }}></div>
-                                   </div>
-                                   <span>{subTaskCompleted}/{subTaskCount}</span>
+                            <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2"><Briefcase size={14} /> Rolle / Modul</label>
+                                <div className="flex gap-2">
+                                    {['Zahnarzt', 'DH / ZMP', 'Azubi'].map(role => (
+                                        <button key={role} onClick={() => setEmployeeRole(role)} className={`flex-1 py-3 rounded-lg border text-xs font-bold transition-all ${employeeRole === role ? 'bg-teal-600 text-white border-teal-600' : 'bg-white text-gray-600'}`}>{role}</button>
+                                    ))}
                                 </div>
-                            )}
-
-                            <button onClick={() => setSelectedModule(module)} className="mt-3 w-full py-2 bg-gray-50 hover:bg-gray-100 text-gray-600 text-xs font-bold rounded-lg border border-gray-100 transition-colors">
-                                Details & Checkliste öffnen
-                            </button>
+                            </div>
+                            <div className="bg-white rounded-xl border overflow-hidden">
+                                <div className="bg-gray-50 px-4 py-2 border-b"><label className="text-xs font-bold text-gray-500 uppercase">Dokumente Sichtbarkeit</label></div>
+                                <div className="divide-y max-h-60 overflow-y-auto">
+                                    {documents.map(doc => (
+                                        <div key={doc.id} onClick={() => toggleDocVisibility(doc.id)} className={`p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${!doc.visible && 'opacity-50'}`}>
+                                            <span className="text-sm text-gray-700 truncate max-w-[200px]">{doc.title}</span>
+                                            {doc.visible ? <Eye size={16} className="text-teal-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <div className="bg-white rounded-xl border overflow-hidden">
+                                <div className="bg-gray-50 px-4 py-2 border-b"><label className="text-xs font-bold text-gray-500 uppercase">Module Sichtbarkeit</label></div>
+                                <div className="divide-y max-h-60 overflow-y-auto">
+                                    {modules.map(mod => (
+                                        <div key={mod.id} onClick={() => toggleModuleVisibility(mod.id)} className={`p-3 flex justify-between items-center cursor-pointer hover:bg-gray-50 ${!mod.visible && 'opacity-50'}`}>
+                                            <span className="text-sm text-gray-700 truncate max-w-[200px]">{mod.title}</span>
+                                            {mod.visible ? <Eye size={16} className="text-purple-600" /> : <EyeOff size={16} className="text-gray-400" />}
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                            <button onClick={() => setIsAdminMode(false)} className="w-full bg-teal-600 text-white py-4 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2"><Save size={18} /> Speichern & Starten</button>
+                            <button onClick={resetApp} className="w-full text-red-400 text-xs py-4 flex items-center justify-center gap-1 hover:text-red-600"><RotateCcw size={12} /> Alle Daten zurücksetzen (Reset)</button>
                         </div>
                     </div>
                 );
-            })}
-        </div>
-      </div>
-  );
+            }
 
-  // --- MODAL: MODULE DETAILS ---
-  const ModuleModal = () => {
-      if (!selectedModule) return null;
-      
-      // Helper for media rendering
-      const renderMedia = () => {
-          if (selectedModule.mediaType === 'image') {
-              return (
-                  <div className="w-full h-full relative group">
-                     <img 
-                       src={selectedModule.mediaUrl || 'https://placehold.co/600x400/e2e8f0/1e293b?text=Lageplan+Placeholder'} 
-                       alt={selectedModule.title} 
-                       className="w-full h-full object-cover"
-                     />
-                     <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
-                     <button onClick={() => setSelectedModule(null)} className="absolute top-4 right-4 bg-black/40 text-white p-1 rounded-full z-10"><X size={20} /></button>
-                     <div className="absolute bottom-4 left-4 bg-black/60 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
-                        <ImageIcon size={12} /> Bildansicht
-                     </div>
-                  </div>
-              );
-          } else {
-               return (
-                <>
-                 <div className="flex flex-col items-center justify-center text-white/80"><Play size={48} /><p className="text-xs mt-2 font-mono opacity-70">{selectedModule.mediaPlaceholder}</p></div>
-                 <button onClick={() => setSelectedModule(null)} className="absolute top-4 right-4 bg-black/40 text-white p-1 rounded-full z-10"><X size={20} /></button>
-                </>
-               );
-          }
-      };
+            // Main App Render
+            return (
+                <div className="bg-white min-h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative font-sans text-gray-900">
+                    <main className="h-screen overflow-y-auto scrollbar-hide bg-white">
+                        
+                        {/* HEADER DASHBOARD */}
+                        {activeTab === 'dashboard' && (
+                            <div className="space-y-6 pb-20 animate-in fade-in duration-300">
+                                <header className="bg-teal-700 text-white pt-6 pb-2 rounded-b-3xl shadow-xl relative overflow-hidden transition-all">
+                                    <button onClick={() => setIsAdminMode(true)} className="absolute top-4 right-4 text-teal-500/30 hover:text-white transition"><Lock size={16} /></button>
+                                    <div className="px-6 relative z-10 mb-4">
+                                        <div className="flex items-baseline gap-2">
+                                            <h1 className="text-2xl font-bold">Moin, {employeeName}!</h1>
+                                            <span className="text-xs font-bold bg-teal-600/50 px-2 py-0.5 rounded border border-teal-500/50 text-teal-100">{employeeRole}</span>
+                                        </div>
+                                        <p className="text-teal-200 text-sm">Dein Onboarding-Fahrplan.</p>
+                                    </div>
+                                    <div className="flex overflow-x-auto snap-x snap-mandatory gap-4 px-6 pb-6 scrollbar-hide">
+                                        {Object.keys(PHASES).map(key => {
+                                            const phase = PHASES[key];
+                                            const contact = CONTACTS[phase.contactKey];
+                                            const isActive = activePhaseContext === key.toLowerCase();
+                                            return (
+                                                <div key={key} onClick={() => setActivePhaseContext(key.toLowerCase())} className={`snap-center shrink-0 w-[85%] bg-white/10 rounded-xl p-4 backdrop-blur-sm border transition-all duration-300 cursor-pointer ${isActive ? 'border-white/60 bg-white/20 shadow-lg scale-[1.02]' : 'border-white/5 opacity-80'}`}>
+                                                    <div className="flex items-center space-x-3 mb-3">
+                                                        <Avatar initials={contact.initials} color={contact.color} />
+                                                        <div><p className="text-[10px] text-teal-100 uppercase font-bold">{phase.title}</p><p className="font-semibold text-white text-sm">{contact.names.join(' & ')}</p></div>
+                                                    </div>
+                                                    <div className="flex gap-2 mt-4">
+                                                        <a href={`tel:${contact.phone}`} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><Phone size={14}/></a>
+                                                        <a href={`mailto:${contact.email}`} className="flex-1 bg-white text-teal-700 py-2 rounded-lg text-xs font-bold flex items-center justify-center gap-2"><Mail size={14}/></a>
+                                                    </div>
+                                                </div>
+                                            )
+                                        })}
+                                    </div>
+                                </header>
+                                <div className="px-6 pt-2 space-y-4">
+                                    {Object.keys(PHASES).map(key => {
+                                        const phase = PHASES[key];
+                                        const stat = stats[key.toLowerCase()];
+                                        const isActive = activePhaseContext === key.toLowerCase();
+                                        return (
+                                            <div key={key} onClick={() => { setActivePhaseContext(key.toLowerCase()); setActiveTab(key === 'ONBOARDING' ? 'learning' : 'docs'); }} className={`relative pl-8 border-l-2 cursor-pointer transition-all ${isActive ? 'border-teal-500' : 'border-gray-200'}`}>
+                                                <div className={`absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 ${isActive ? 'bg-teal-500 border-teal-500 scale-110' : stat.done === stat.total && stat.total > 0 ? 'bg-green-500 border-green-500' : 'bg-white border-gray-300'}`}></div>
+                                                <div className={`bg-white p-4 rounded-xl border shadow-sm ${isActive ? 'border-teal-500 ring-1 ring-teal-100' : 'border-gray-100'}`}>
+                                                    <h3 className={`font-bold text-sm ${isActive ? 'text-teal-700' : 'text-gray-700'}`}>{phase.title}</h3>
+                                                    <p className="text-xs text-gray-500 mb-2">{phase.subtitle}</p>
+                                                    <ProgressBar current={stat.done} total={stat.total} colorClass={isActive ? 'bg-teal-500' : 'bg-gray-300'} />
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                <div className="px-6"><button onClick={handleSendEmailReport} className="w-full bg-white border border-teal-200 text-teal-700 py-3 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2"><Send size={18} /> Fortschritt an Büro senden</button></div>
+                            </div>
+                        )}
 
-      return (
-        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 font-sans">
-          <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl h-[85vh] sm:h-auto overflow-y-auto flex flex-col">
-            
-            {/* Header / Media Area */}
-            <div className="bg-slate-900 aspect-video relative flex items-center justify-center sm:rounded-t-2xl shrink-0 overflow-hidden">
-               {renderMedia()}
-            </div>
+                        {/* DOCS TAB */}
+                        {activeTab === 'docs' && (
+                            <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6">Checklisten</h2>
+                                <div className="space-y-8">
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-700 mb-3 sticky top-0 bg-white py-2 z-10">Phase 1: Vor dem Start</h3>
+                                        {visibleDocuments.filter(d => d.phase === 'pre_start').map(doc => (
+                                            <div key={doc.id} className={`bg-white border rounded-xl overflow-hidden mb-3 ${doc.completed ? 'border-green-200 bg-green-50/30 opacity-80' : 'border-gray-200 shadow-sm'}`}>
+                                                <div className="p-4 flex items-start gap-3 cursor-pointer" onClick={() => setSelectedDoc(selectedDoc === doc.id ? null : doc.id)}>
+                                                    <button onClick={(e) => {e.stopPropagation(); toggleDocCompletion(doc.id)}} className={`mt-1 ${doc.completed ? 'text-green-500' : 'text-gray-300'}`}>{doc.completed ? <CheckCircle2 size={24}/> : <Circle size={24}/>}</button>
+                                                    <div className="flex-1"><h3 className="font-semibold text-sm">{doc.title}</h3><p className="text-xs text-gray-500">{doc.subtitle}</p></div>
+                                                    {selectedDoc === doc.id ? <ArrowDown size={16} className="text-gray-400"/> : <ChevronRight size={16} className="text-gray-300"/>}
+                                                </div>
+                                                {selectedDoc === doc.id && (
+                                                    <div className="px-4 pb-4 pl-12 bg-gray-50/50 border-t border-gray-100 pt-3">
+                                                        <p className="text-xs text-gray-600 mb-3">{doc.description}</p>
+                                                        {doc.downloadUrl && <a href={doc.downloadUrl} target="_blank" className="mb-3 flex items-center justify-center gap-2 w-full py-2 bg-blue-50 text-blue-600 border border-blue-100 rounded-lg text-xs font-bold"><Download size={14}/> PDF Herunterladen</a>}
+                                                        {doc.id === 10 && !doc.completed && <div className="mb-3 flex gap-1">{['XS','S','M','L','XL'].map(s => <button key={s} className="flex-1 py-1 text-xs border rounded bg-white">{s}</button>)}</div>}
+                                                        <div className="flex gap-2">
+                                                            <button onClick={() => toggleDocCompletion(doc.id)} className="flex-1 py-2 text-xs font-bold bg-teal-600 text-white rounded-lg">{doc.completed ? 'Rückgängig' : 'Erledigen'}</button>
+                                                            {doc.emailAction && <button onClick={() => handleSendDocEmail(doc)} className="flex-1 py-2 text-xs font-bold bg-white text-teal-600 border border-teal-200 rounded-lg flex items-center justify-center gap-1"><Mail size={14}/> Senden</button>}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-bold text-gray-700 mb-3 sticky top-0 bg-white py-2 z-10">Phase 2: Am 1. Tag</h3>
+                                        {visibleDocuments.filter(d => d.phase === 'day_one').map(doc => (
+                                            <div key={doc.id} className={`bg-white border rounded-xl overflow-hidden mb-3 ${doc.completed ? 'border-green-200 bg-green-50/30 opacity-80' : 'border-gray-200 shadow-sm'}`}>
+                                                <div className="p-4 flex items-start gap-3 cursor-pointer" onClick={() => setSelectedDoc(selectedDoc === doc.id ? null : doc.id)}>
+                                                    <button onClick={(e) => {e.stopPropagation(); toggleDocCompletion(doc.id)}} className={`mt-1 ${doc.completed ? 'text-green-500' : 'text-gray-300'}`}>{doc.completed ? <CheckCircle2 size={24}/> : <Circle size={24}/>}</button>
+                                                    <div className="flex-1"><h3 className="font-semibold text-sm">{doc.title}</h3><p className="text-xs text-gray-500">{doc.subtitle}</p></div>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
-            <div className="p-6 flex-1">
-              <div className="mb-6">
-                  <h2 className="text-xl font-bold text-gray-800 mb-1">{selectedModule.title}</h2>
-                  <p className="text-sm text-gray-600">{selectedModule.description}</p>
-              </div>
-              
-              {/* Subtasks Checklist */}
-              <div className="mb-6">
-                  <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2">
-                      <CheckSquare size={14} /> Aufgaben-Checkliste
-                  </h3>
-                  <div className="space-y-2">
-                      {selectedModule.subTasks && selectedModule.subTasks.map(task => (
-                          <div 
-                            key={task.id} 
-                            onClick={() => toggleSubTask(selectedModule.id, task.id)}
-                            className={`p-3 rounded-lg border flex items-start gap-3 cursor-pointer transition-all ${task.completed ? 'bg-teal-50 border-teal-200' : 'bg-white border-gray-200 hover:border-teal-300'}`}
-                          >
-                              <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors ${task.completed ? 'bg-teal-500 border-teal-500' : 'bg-white border-gray-300'}`}>
-                                  {task.completed && <CheckCircle2 size={14} className="text-white" />}
-                              </div>
-                              <span className={`text-sm ${task.completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{task.text}</span>
-                          </div>
-                      ))}
-                  </div>
-              </div>
+                        {/* LEARNING TAB */}
+                        {activeTab === 'learning' && (
+                            <div className="px-4 pt-6 pb-20 animate-in slide-in-from-right-4 duration-300 font-sans">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6">Einarbeitung (Woche 1 & 2)</h2>
+                                <div className="space-y-4">
+                                    {visibleModules.map(module => {
+                                        const subTaskCount = module.subTasks ? module.subTasks.length : 0;
+                                        const subTaskCompleted = module.subTasks ? module.subTasks.filter(t => t.completed).length : 0;
+                                        return (
+                                            <div key={module.id} className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                                                <div className="relative h-28 bg-slate-800 flex items-center justify-center group cursor-pointer" onClick={() => setSelectedModule(module)}>
+                                                    <div className="absolute inset-0 bg-black/40"></div>
+                                                    <div className="relative z-10 w-10 h-10 bg-white/90 rounded-full flex items-center justify-center text-teal-600 shadow-lg">{module.mediaType === 'image' ? <ImageIcon size={18}/> : <Play size={18} fill="currentColor"/>}</div>
+                                                    {module.completed && <div className="absolute top-2 right-2 bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1"><CheckCircle2 size={12}/> Erledigt</div>}
+                                                </div>
+                                                <div className="p-4">
+                                                    <h3 className="font-bold text-gray-800 text-sm mb-1">{module.title}</h3>
+                                                    <div className="flex items-center gap-2 text-[10px] text-gray-400 mt-2">
+                                                        <div className="flex-1 bg-gray-100 rounded-full h-1"><div className="bg-teal-500 h-1 rounded-full transition-all" style={{ width: `${subTaskCount > 0 ? (subTaskCompleted/subTaskCount)*100 : 0}%` }}></div></div>
+                                                        <span>{subTaskCompleted}/{subTaskCount}</span>
+                                                    </div>
+                                                    <button onClick={() => setSelectedModule(module)} className="mt-3 w-full py-2 bg-gray-50 text-gray-600 text-xs font-bold rounded-lg border border-gray-100">Details öffnen</button>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        )}
 
-              <button onClick={() => { toggleModuleCompletion(selectedModule.id); setSelectedModule(null); }} className={`w-full py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 ${selectedModule.completed ? 'bg-gray-200 text-gray-600' : 'bg-teal-600 text-white'}`}>
-                  {selectedModule.completed ? 'Als unerledigt markieren' : <><CheckCircle2 size={18}/> Modul abschließen</>}
-              </button>
-            </div>
-          </div>
-        </div>
-      );
-  };
+                        {/* NOTES TAB */}
+                        {activeTab === 'notes' && (
+                            <div className="px-4 pt-6 pb-20 flex flex-col h-full font-sans">
+                                <h2 className="text-xl font-bold text-gray-800 mb-1">Notizen</h2>
+                                <p className="text-gray-500 text-sm mb-6">Fragen an Mentoren</p>
+                                <div className="flex gap-2 mb-6">
+                                    <input type="text" value={newNoteText} onChange={(e) => setNewNoteText(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && addNote()} placeholder="Frage eingeben..." className="flex-1 border rounded-xl px-4 py-2 text-sm outline-none focus:border-teal-500" />
+                                    <button onClick={addNote} className="bg-teal-600 text-white w-10 h-10 rounded-xl flex items-center justify-center"><Plus size={24}/></button>
+                                </div>
+                                <div className="space-y-3 flex-1 overflow-y-auto pb-20">
+                                    {notes.map(note => (
+                                        <div key={note.id} className={`p-4 rounded-xl border transition-all ${note.completed ? 'bg-gray-50' : 'bg-white border-teal-100 shadow-sm'}`}>
+                                            <div className="flex items-start gap-3">
+                                                <button onClick={() => toggleNote(note.id)} className={`mt-0.5 ${note.completed ? 'text-gray-400' : 'text-teal-500'}`}>{note.completed ? <CheckCircle2 size={20}/> : <Circle size={20}/>}</button>
+                                                <div className="flex-1">
+                                                    <p className={`text-sm font-medium ${note.completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{note.text}</p>
+                                                    {editingNoteId === note.id ? (
+                                                        <div className="mt-2 flex gap-2"><input type="text" autoFocus value={tempRemark} onChange={(e) => setTempRemark(e.target.value)} className="flex-1 text-xs border rounded px-2 py-1 bg-blue-50" /><button onClick={() => saveRemark(note.id)} className="text-green-600"><CheckCircle2 size={16} /></button></div>
+                                                    ) : (
+                                                        (note.remark || note.completed) && <div onClick={() => startEditingRemark(note)} className="mt-2 flex items-center gap-1 text-xs text-gray-500 bg-gray-100 p-2 rounded cursor-pointer"><MessageSquare size={12} className="text-blue-400"/> {note.remark || "Notiz..."}</div>
+                                                    )}
+                                                </div>
+                                                <button onClick={() => deleteNote(note.id)} className="text-gray-300 hover:text-red-400"><Trash2 size={16}/></button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
 
-  if (isAdminMode) return <div className="bg-gray-50 min-h-screen max-w-md mx-auto shadow-2xl font-sans text-gray-900">{renderAdminPanel()}</div>;
+                        {/* TEAM TAB */}
+                        {activeTab === 'team' && (
+                            <div className="px-4 pt-6 pb-20 font-sans animate-in fade-in">
+                                <h2 className="text-xl font-bold text-gray-800 mb-6">Das Team</h2>
+                                <div className="space-y-6">
+                                    <section><h3 className="font-bold text-xs uppercase text-teal-700 mb-2">Behandler</h3>{TEAM_MEMBERS.behandler.map((m,i) => <div key={i} className="bg-white p-3 mb-2 rounded-xl border flex items-start gap-3"><Avatar initials={m.image} color="bg-indigo-500"/><div className="flex-1"><p className="font-bold text-sm">{m.name}</p><p className="text-[10px] text-gray-500">{m.role}</p></div></div>)}</section>
+                                    <section><h3 className="font-bold text-xs uppercase text-teal-700 mb-2">Assistenz</h3>{TEAM_MEMBERS.assistenz.map((m,i) => <div key={i} className="bg-white p-3 mb-2 rounded-xl border flex items-start gap-3"><Avatar initials={m.image} color="bg-pink-500"/><div className="flex-1"><p className="font-bold text-sm">{m.name}</p><p className="text-[10px] text-gray-500">{m.role}</p></div></div>)}</section>
+                                    <section><h3 className="font-bold text-xs uppercase text-teal-700 mb-2">Azubi</h3>{TEAM_MEMBERS.azubi.map((m,i) => <div key={i} className="bg-white p-3 mb-2 rounded-xl border flex items-start gap-3"><Avatar initials={m.image} color="bg-amber-500"/><div className="flex-1"><p className="font-bold text-sm">{m.name}</p><p className="text-[10px] text-gray-500">{m.role}</p></div></div>)}</section>
+                                </div>
+                            </div>
+                        )}
 
-  return (
-    <div className="bg-white min-h-screen max-w-md mx-auto shadow-2xl overflow-hidden relative font-sans text-gray-900">
-      <main className="h-screen overflow-y-auto scrollbar-hide bg-white">
-        {activeTab === 'dashboard' && renderDashboard()}
-        {activeTab === 'docs' && renderDocs()}
-        {activeTab === 'learning' && renderLearning()}
-        {activeTab === 'notes' && renderNotes()}
-        {activeTab === 'team' && renderTeam()}
-      </main>
-      <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 pb-safe pt-1 flex justify-between items-center z-40 safe-area-pb">
-        <TabButton active={activeTab === 'dashboard'} icon={Menu} label="Zeitplan" onClick={() => setActiveTab('dashboard')} />
-        <TabButton active={activeTab === 'docs'} icon={FileText} label="Docs" onClick={() => setActiveTab('docs')} />
-        <TabButton active={activeTab === 'learning'} icon={Play} label="Einarbeitung" onClick={() => setActiveTab('learning')} />
-        <TabButton active={activeTab === 'notes'} icon={StickyNote} label="Notizen" onClick={() => setActiveTab('notes')} />
-        <TabButton active={activeTab === 'team'} icon={Users} label="Team" onClick={() => setActiveTab('team')} />
-      </nav>
-      <ModuleModal />
-    </div>
-  );
-}
+                    </main>
+
+                    {/* NAVIGATION BAR */}
+                    <nav className="absolute bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-2 pb-safe pt-1 flex justify-between items-center z-40 safe-area-pb">
+                        <TabButton active={activeTab === 'dashboard'} icon={Menu} label="Zeitplan" onClick={() => setActiveTab('dashboard')} />
+                        <TabButton active={activeTab === 'docs'} icon={FileText} label="Docs" onClick={() => setActiveTab('docs')} />
+                        <TabButton active={activeTab === 'learning'} icon={Play} label="Einarbeitung" onClick={() => setActiveTab('learning')} />
+                        <TabButton active={activeTab === 'notes'} icon={StickyNote} label="Notizen" onClick={() => setActiveTab('notes')} />
+                        <TabButton active={activeTab === 'team'} icon={Users} label="Team" onClick={() => setActiveTab('team')} />
+                    </nav>
+
+                    {/* MODAL: MODULE DETAILS */}
+                    {selectedModule && (
+                        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200 font-sans">
+                            <div className="bg-white w-full sm:max-w-md sm:rounded-2xl rounded-t-3xl h-[85vh] sm:h-auto overflow-y-auto flex flex-col">
+                                <div className="bg-slate-900 aspect-video relative flex items-center justify-center sm:rounded-t-2xl shrink-0 overflow-hidden">
+                                    {selectedModule.mediaType === 'image' ? <img src={selectedModule.mediaUrl || 'https://placehold.co/600x400/e2e8f0/1e293b?text=Lageplan'} className="w-full h-full object-cover"/> : <div className="flex flex-col items-center justify-center text-white/80"><Play size={48}/><p className="text-xs mt-2 opacity-70">{selectedModule.mediaPlaceholder}</p></div>}
+                                    <button onClick={() => setSelectedModule(null)} className="absolute top-4 right-4 bg-black/40 text-white p-1 rounded-full z-10"><X size={20}/></button>
+                                </div>
+                                <div className="p-6 flex-1">
+                                    <h2 className="text-xl font-bold text-gray-800 mb-1">{selectedModule.title}</h2>
+                                    <p className="text-sm text-gray-600 mb-6">{selectedModule.description}</p>
+                                    <div className="mb-6">
+                                        <h3 className="text-xs font-bold text-gray-500 uppercase mb-3 flex items-center gap-2"><CheckSquare size={14}/> Aufgaben</h3>
+                                        <div className="space-y-2">
+                                            {selectedModule.subTasks && selectedModule.subTasks.map(task => (
+                                                <div key={task.id} onClick={() => toggleSubTask(selectedModule.id, task.id)} className={`p-3 rounded-lg border flex items-start gap-3 cursor-pointer ${task.completed ? 'bg-teal-50 border-teal-200' : 'bg-white border-gray-200'}`}>
+                                                    <div className={`mt-0.5 w-5 h-5 rounded border flex items-center justify-center shrink-0 ${task.completed ? 'bg-teal-500 border-teal-500' : 'bg-white border-gray-300'}`}>{task.completed && <CheckCircle2 size={14} className="text-white"/>}</div>
+                                                    <span className={`text-sm ${task.completed ? 'text-gray-500 line-through' : 'text-gray-800'}`}>{task.text}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <button onClick={() => { toggleModuleCompletion(selectedModule.id); setSelectedModule(null); }} className={`w-full py-3 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2 ${selectedModule.completed ? 'bg-gray-200 text-gray-600' : 'bg-teal-600 text-white'}`}>{selectedModule.completed ? 'Als unerledigt markieren' : <><CheckCircle2 size={18}/> Modul abschließen</>}</button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        // Render
+        const root = createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
