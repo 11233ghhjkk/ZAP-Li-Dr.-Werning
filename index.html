@@ -308,7 +308,7 @@
                         {activeTab === 'dashboard' && (
                             <div className="space-y-6 pb-20 animate-in fade-in duration-300">
                                 <header className="bg-teal-700 text-white pt-6 pb-2 rounded-b-3xl shadow-xl relative overflow-hidden transition-all">
-                                    <button onClick={handleAdminLogin} className="absolute top-4 right-4 text-white opacity-80 hover:opacity-100 transition flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg border border-white/20">
+                                    <button onClick={handleAdminLogin} className="absolute top-4 right-4 z-50 cursor-pointer text-white opacity-100 hover:bg-white/20 transition flex items-center gap-1 bg-white/10 px-2 py-1 rounded-lg border border-white/20 shadow-sm">
                                         <Icons.Lock width={14} height={14} />
                                         <span className="text-[10px] font-bold tracking-wider">ADMIN</span>
                                     </button>
